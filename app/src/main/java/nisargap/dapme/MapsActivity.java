@@ -83,9 +83,24 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             for(int i = 0; i < result.size(); ++i) {
 
-                mMap.addMarker(result.get(i));
+                newMarkers.add(mMap.addMarker(result.get(i)));
 
             }
+            if(!addedMarkers.isEmpty()){
+
+                for(Marker a : addedMarkers) {
+
+                    a.remove();
+
+                }
+                addedMarkers.clear();
+            }
+            for(Marker a : newMarkers) {
+
+                addedMarkers.add(a);
+            }
+
+
 
         }
     }
@@ -98,6 +113,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private GoogleApiClient client;
 
     private ArrayList<MarkerOptions> members;
+    private ArrayList<Marker> addedMarkers;
+    private ArrayList<Marker> newMarkers;
     private Location currentLocation;
 
     @Override
@@ -106,6 +123,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         setContentView(R.layout.activity_maps);
 
         members = new ArrayList<>();
+        addedMarkers = new ArrayList<>();
+        newMarkers = new ArrayList<>();
 
         SocketUtility.getInstance().listenOnUserData(new Emitter.Listener() {
             @Override
