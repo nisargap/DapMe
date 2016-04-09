@@ -6,6 +6,10 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
+import com.github.nkzawa.emitter.Emitter;
+
+import org.json.JSONArray;
+
 public class MembersViewActivity extends AppCompatActivity {
 
     FirebaseUserAuth mUserAuth;
@@ -43,6 +47,22 @@ public class MembersViewActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         SocketUtility.getInstance().connect();
+        SocketUtility.getInstance().listenOnUserData(new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+
+                try {
+                    JSONArray data = (JSONArray) args[0];
+
+                    Log.d("ME", data.toString());
+
+                } catch (NullPointerException e) {
+
+                    Log.d("ME", e.getMessage());
+                }
+
+            }
+        });
 
     }
 
@@ -50,6 +70,7 @@ public class MembersViewActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         SocketUtility.getInstance().closeConnection();
+        SocketUtility.getInstance().stopListenOnUserData();
 
     }
 

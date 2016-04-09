@@ -20,6 +20,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import com.github.nkzawa.emitter.Emitter;
 import com.github.nkzawa.socketio.client.IO;
 import com.github.nkzawa.socketio.client.Socket;
 import com.google.android.gms.appindexing.Action;
@@ -34,6 +35,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.net.URISyntaxException;
@@ -303,6 +305,22 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
         SocketUtility.getInstance().connect();
+        SocketUtility.getInstance().listenOnUserData(new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+
+                try {
+                    JSONArray data = (JSONArray) args[0];
+
+                    Log.d("ME", data.toString());
+
+                } catch (NullPointerException e) {
+
+                    Log.d("ME", e.getMessage());
+                }
+
+            }
+        });
     }
 
     @Override
@@ -321,6 +339,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
         locationManager.removeUpdates(this);
         SocketUtility.getInstance().closeConnection();
+        SocketUtility.getInstance().stopListenOnUserData();
     }
 
     protected boolean isBetterLocation(Location location, Location currentBestLocation) {

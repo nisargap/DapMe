@@ -64,6 +64,11 @@ public class SocketUtility {
 
     }
 
+    public void stopListenOnUserData(){
+
+        mSocket.off("user_data");
+    }
+
     public void sendUserData(double lat, double lng, String uuid) throws JSONException {
 
         JSONObject dataToSend = new JSONObject();
