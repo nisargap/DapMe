@@ -8,6 +8,7 @@ android {
         applicationId "nisargap.dapme"
         minSdkVersion 19
         targetSdkVersion 23
+        multiDexEnabled true
         versionCode 1
         versionName "1.0"
     }
@@ -32,5 +33,7 @@ dependencies {
     compile 'com.google.android.gms:play-services-maps:8.3.0'
     compile 'com.firebase:firebase-client-android:2.5.2+'
     compile 'com.github.nkzawa:socket.io-client:0.3.0'
+    compile 'com.google.android.gms:play-services-auth:8.3.0'
+    compile 'com.google.android.gms:play-services-plus:8.3.0'
     compile 'com.google.android.gms:play-services-appindexing:8.3.0'
 }

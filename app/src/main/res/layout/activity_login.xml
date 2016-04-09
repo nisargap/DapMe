@@ -51,6 +51,10 @@
                 android:id="@+id/signUp"
                 android:layout_gravity="center_horizontal"
                 android:onClick="signInView" />
+            <com.google.android.gms.common.SignInButton
+                android:id="@+id/login_with_google"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
 
         </LinearLayout>
     </ScrollView>

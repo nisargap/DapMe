@@ -19,4 +19,5 @@
     </string>
     <string name="title_activity_sign_up">Sign in</string>
     <string name="title_activity_maps">Map</string>
+    <string name="title_activity_google_oauth">GoogleOAuthActivity</string>
 </resources>

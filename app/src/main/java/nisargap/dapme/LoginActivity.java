@@ -3,18 +3,15 @@ package nisargap.dapme;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
+import android.content.IntentSender;
 import android.support.v7.app.AppCompatActivity;
 import android.app.LoaderManager.LoaderCallbacks;
 
-import android.content.CursorLoader;
 import android.content.Loader;
 import android.database.Cursor;
-import android.net.Uri;
 import android.os.AsyncTask;
 
 import android.os.Build;
@@ -30,16 +27,23 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import com.github.nkzawa.emitter.Emitter;
 
 import com.firebase.client.AuthData;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
-import com.github.nkzawa.emitter.Emitter;
+import com.google.android.gms.auth.GoogleAuthException;
+import com.google.android.gms.auth.GoogleAuthUtil;
+import com.google.android.gms.auth.UserRecoverableAuthException;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.Scopes;
+import com.google.android.gms.common.SignInButton;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.plus.Plus;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
 
-import java.util.ArrayList;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -48,15 +52,19 @@ import java.util.Map;
  * A login screen that offers login via email/password.
  * This is the login screen that will connect to Firebase - Nisarga
  */
-public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<Cursor> {
+public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<Cursor>, GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener{
 
     /**
      * A dummy authentication store containing known user names and passwords.
      * TODO: remove after connecting to a real authentication system.
      */
-    private static final String[] DUMMY_CREDENTIALS = new String[]{
-            "foo@example.com:hello", "bar@example.com:world"
-    };
+    private static final String TAG;
+
+    static {
+        TAG = LoginActivity.class.getSimpleName();
+    }
+
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
@@ -65,16 +73,58 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     // UI references.
     private AutoCompleteTextView mEmailView;
     private EditText mPasswordView;
+    /* A dialog that is presented until the Firebase authentication finished. */
+    private ProgressDialog mAuthProgressDialog;
     private View mProgressView;
     private View mLoginFormView;
 
     private FirebaseUserAuth mUserAuth;
+
+    /* *************************************
+     *              GOOGLE                 *
+     ***************************************/
+    /* Request code used to invoke sign in user interactions for Google+ */
+    public static final int RC_GOOGLE_LOGIN = 1;
+
+    /* Client used to interact with Google APIs. */
+    private GoogleApiClient mGoogleApiClient;
+
+    /* A flag indicating that a PendingIntent is in progress and prevents us from starting further intents. */
+    private boolean mGoogleIntentInProgress;
+
+    /* Track whether the sign-in button has been clicked so that we know to resolve all issues preventing sign-in
+     * without waiting. */
+    private boolean mGoogleLoginClicked;
+
+    /* Store the connection result from onConnectionFailed callbacks so that we can resolve them when the user clicks
+     * sign-in. */
+    private ConnectionResult mGoogleConnectionResult;
+
+    private class GoogleAuthResultHandler implements Firebase.AuthResultHandler{
+
+
+        @Override
+        public void onAuthenticated(AuthData authData) {
+            SocketUtility.getInstance().connect();
+
+
+            Intent membersActivity = new Intent(LoginActivity.this, MembersViewActivity.class);
+            startActivity(membersActivity);
+        }
+
+        @Override
+        public void onAuthenticationError(FirebaseError firebaseError) {
+            Log.d("nisargap", firebaseError.getMessage());
+        }
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
 
+        mAuthProgressDialog = new ProgressDialog(this);
         // Set up the Firebase context
         Firebase.setAndroidContext(this);
 
@@ -115,15 +165,62 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
+
+
+        /* *************************************
+         *               GOOGLE                *
+         ***************************************/
+        /* Load the Google login button */
+        SignInButton mGoogleLoginButton = (SignInButton) findViewById(R.id.login_with_google);
+        mGoogleLoginButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mGoogleLoginClicked = true;
+                if (!mGoogleApiClient.isConnecting()) {
+                    if (mGoogleConnectionResult != null) {
+                        resolveSignInError();
+                    } else if (mGoogleApiClient.isConnected()) {
+                        getGoogleOAuthTokenAndLogin();
+                    } else {
+                    /* connect API now */
+                        Log.d(TAG, "Trying to connect to Google API");
+                        mGoogleApiClient.connect();
+                    }
+                }
+            }
+        });
+        /* Setup the Google API object to allow Google+ logins */
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(Plus.API)
+                .addScope(Plus.SCOPE_PLUS_LOGIN)
+                .build();
+
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        Map<String, String> options = new HashMap<String, String>();
+        if (requestCode == RC_GOOGLE_LOGIN) {
+            /* This was a request by the Google API */
+            if (resultCode != RESULT_OK) {
+                mGoogleLoginClicked = false;
+            }
+            mGoogleIntentInProgress = false;
+            if (!mGoogleApiClient.isConnecting()) {
+                mGoogleApiClient.connect();
+            }
+        }
     }
 
 
-
-    /**
-     * Attempts to sign in or register the account specified by the login form.
-     * If there are form errors (invalid email, missing fields, etc.), the
-     * errors are presented and no actual login attempt is made.
-     */
+        /**
+         * Attempts to sign in or register the account specified by the login form.
+         * If there are form errors (invalid email, missing fields, etc.), the
+         * errors are presented and no actual login attempt is made.
+         */
     private void attemptLogin() {
         if (mAuthTask != null) {
             return;
@@ -256,6 +353,115 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mEmailView.setAdapter(adapter);
     }
 
+    /* ************************************
+     *              GOOGLE                *
+     **************************************
+     */
+    /* A helper method to resolve the current ConnectionResult error. */
+    private void resolveSignInError() {
+        if (mGoogleConnectionResult.hasResolution()) {
+            try {
+                mGoogleIntentInProgress = true;
+                mGoogleConnectionResult.startResolutionForResult(this, RC_GOOGLE_LOGIN);
+            } catch (IntentSender.SendIntentException e) {
+                // The intent was canceled before it was sent.  Return to the default
+                // state and attempt to connect to get an updated ConnectionResult.
+                mGoogleIntentInProgress = false;
+                mGoogleApiClient.connect();
+            }
+        }
+    }
+    /**
+     * Show errors to users
+     */
+    private void showErrorDialog(String message) {
+        new AlertDialog.Builder(this)
+                .setTitle("Error")
+                .setMessage(message)
+                .setPositiveButton(android.R.string.ok, null)
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .show();
+    }
+
+    private void getGoogleOAuthTokenAndLogin() {
+        mAuthProgressDialog.show();
+        /* Get OAuth token in Background */
+        AsyncTask<Void, Void, String> task = new AsyncTask<Void, Void, String>() {
+            String errorMessage = null;
+
+            @Override
+            protected String doInBackground(Void... params) {
+                String token = null;
+
+                try {
+                    String scope = String.format("oauth2:%s", Scopes.PLUS_LOGIN);
+                    token = GoogleAuthUtil.getToken(LoginActivity.this, Plus.AccountApi.getAccountName(mGoogleApiClient), scope);
+                } catch (IOException transientEx) {
+                    /* Network or server error */
+                    Log.e(TAG, "Error authenticating with Google: " + transientEx);
+                    errorMessage = "Network error: " + transientEx.getMessage();
+                } catch (UserRecoverableAuthException e) {
+                    Log.w(TAG, "Recoverable Google OAuth error: " + e.toString());
+                    /* We probably need to ask for permissions, so start the intent if there is none pending */
+                    if (!mGoogleIntentInProgress) {
+                        mGoogleIntentInProgress = true;
+                        Intent recover = e.getIntent();
+                        startActivityForResult(recover, RC_GOOGLE_LOGIN);
+                    }
+                } catch (GoogleAuthException authEx) {
+                    /* The call is not ever expected to succeed assuming you have already verified that
+                     * Google Play services is installed. */
+                    Log.e(TAG, "Error authenticating with Google: " + authEx.getMessage(), authEx);
+                    errorMessage = "Error authenticating with Google: " + authEx.getMessage();
+                }
+                return token;
+            }
+
+            @Override
+            protected void onPostExecute(String token) {
+                mGoogleLoginClicked = false;
+                /* Successfully got OAuth token, now login with Google */
+                if (token != null){
+
+                    mUserAuth.signGoogleUserIn(token, new GoogleAuthResultHandler());
+                    
+                }
+                else if (errorMessage != null) {
+                    mAuthProgressDialog.hide();
+                    showErrorDialog(errorMessage);
+                }
+            }
+        };
+        task.execute();
+    }
+
+    @Override
+    public void onConnected(final Bundle bundle) {
+        /* Connected with Google API, use this to authenticate with Firebase */
+        getGoogleOAuthTokenAndLogin();
+    }
+
+
+    @Override
+    public void onConnectionFailed(ConnectionResult result) {
+        if (!mGoogleIntentInProgress) {
+            /* Store the ConnectionResult so that we can use it later when the user clicks on the Google+ login button */
+            mGoogleConnectionResult = result;
+
+            if (mGoogleLoginClicked) {
+                /* The user has already clicked login so we attempt to resolve all errors until the user is signed in,
+                 * or they cancel. */
+                resolveSignInError();
+            } else {
+                Log.e(TAG, result.toString());
+            }
+        }
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+        // ignore
+    }
 
     public class UserLoginTask extends AsyncTask<Void, Void, Boolean> {
 

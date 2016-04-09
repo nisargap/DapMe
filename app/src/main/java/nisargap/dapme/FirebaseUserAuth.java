@@ -26,6 +26,11 @@ public class FirebaseUserAuth {
 
     }
 
+    public void signGoogleUserIn(String token, Firebase.AuthResultHandler authHandler) {
+
+        ref.authWithOAuthToken("google", token, authHandler);
+    }
+
     public void createNewUser(String email, String password, Firebase.ValueResultHandler<java.util.Map<String, Object>> valueHandler) {
 
         // Do the user registration
@@ -38,7 +43,7 @@ public class FirebaseUserAuth {
         ref.unauth();
     }
 
-    public boolean checkIfLoggedIn(){
+    public boolean checkIfLoggedIn() {
 
         AuthData authData = ref.getAuth();
 
