@@ -305,6 +305,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
             if (success) {
 
+                SocketUtility.getInstance().connect();
+
                 Intent membersActivity = new Intent(LoginActivity.this, MembersViewActivity.class);
                 startActivity(membersActivity);
 

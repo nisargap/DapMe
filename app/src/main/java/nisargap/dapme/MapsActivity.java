@@ -20,6 +20,8 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import com.github.nkzawa.socketio.client.IO;
+import com.github.nkzawa.socketio.client.Socket;
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -32,6 +34,9 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import org.json.JSONException;
+
+import java.net.URISyntaxException;
 import java.util.HashMap;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener {
@@ -42,6 +47,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static final int LOCATION_REQUEST_CODE = 101;
     private String TAG = "MapDemo";
     private static final int TWO_MINUTES = 1000 * 60 * 2;
+
+    private static final int ZOOM_LEVEL = 15;
 
     private HashMap<String, Marker> users;
 
@@ -159,15 +166,26 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.setMyLocationEnabled(true);
 
         Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        boolean isBetterLoc = isBetterLocation(location, currentLocation);
 
+        if(location != null) {
+
+            currentLocation = location;
+            boolean isBetterLoc = isBetterLocation(location, currentLocation);
+            LatLng latLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, ZOOM_LEVEL));
+
+        }
+
+
+
+        /*
         if (currentLocation == null || isBetterLoc) {
             currentLocation = location;
 
             LatLng latLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
 //            myMarker.setPosition(latLng);
             mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
-        }
+        } */
     }
 
     @Override
@@ -216,14 +234,40 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         boolean isBetterLoc = isBetterLocation(location, currentLocation);
 
-        if (currentLocation == null || isBetterLoc) {
+        if(currentLocation == null) {
+
             currentLocation = location;
 
-            LatLng latLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
-            // TODO: Send this position to the server
-//            myMarker.setPosition(latLng);
-//            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(myMarker.getPosition(), 10));
+            LatLng latLng = new LatLng(currentLocation.getLatitude(),currentLocation.getLongitude());
+
+            try {
+
+                SocketUtility.getInstance().sendLatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+                Log.d("ME", "RIGHT AFTER WE GET INSTANCE AND SET LAT LNG");
+
+            } catch(JSONException e){
+
+                Log.d("ME", e.getMessage());
+            }
+
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, ZOOM_LEVEL));
+
+            // TODO: Send position to server
+
+        } else {
+
+            currentLocation = location;
+            try {
+
+                SocketUtility.getInstance().sendLatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+                Log.d("ME", "RIGHT AFTER WE GET INSTANCE AND SET LAT LNG");
+
+            } catch(JSONException e){
+
+                Log.d("ME", e.getMessage());
+            }
         }
+
     }
 
     @Override
@@ -256,8 +300,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
-        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 5, this);
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 5, this);
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
     }
 
     @Override

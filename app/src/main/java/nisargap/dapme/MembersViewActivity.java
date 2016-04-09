@@ -30,6 +30,8 @@ public class MembersViewActivity extends AppCompatActivity {
 
         mUserAuth.logOut();
 
+        SocketUtility.getInstance().closeConnection();
+
         Intent loginActivity = new Intent(this, LoginActivity.class);
 
         startActivity(loginActivity);
