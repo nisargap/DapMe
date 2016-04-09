@@ -12,8 +12,21 @@
         android:layout_height="wrap_content"
         android:text="Log Out"
         android:id="@+id/button"
-        android:layout_alignParentTop="true"
+        android:onClick="logUserOut"
+        android:layout_marginTop="36dp"
+        android:layout_below="@+id/button4"
         android:layout_alignParentStart="true"
+        android:layout_alignEnd="@+id/button4" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Dap Me Up"
+        android:id="@+id/button4"
+        android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
-        android:onClick="logUserOut" />
+        android:minHeight="90dp"
+        android:background="@color/colorAccent"
+        android:layout_alignParentStart="true"
+        android:onClick="dapMeUp" />
 </RelativeLayout>

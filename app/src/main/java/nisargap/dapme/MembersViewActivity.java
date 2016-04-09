@@ -18,6 +18,13 @@ public class MembersViewActivity extends AppCompatActivity {
         mUserAuth = new FirebaseUserAuth();
     }
 
+    public void dapMeUp(View v) {
+
+        Intent goToMap = new Intent(this, MapsActivity.class);
+        startActivity(goToMap);
+
+    }
+
     public void logUserOut(View v){
 
 
