@@ -1,6 +1,8 @@
 package nisargap.dapme;
+import android.app.Activity;
 import android.util.Log;
 
+import com.github.nkzawa.emitter.Emitter;
 import com.github.nkzawa.socketio.client.IO;
 import com.github.nkzawa.socketio.client.Socket;
 
@@ -56,15 +58,24 @@ public class SocketUtility {
         return instance;
     }
 
-    public void sendLatLng(double lat, double lng) throws JSONException {
+    public void listenOnUserData(Emitter.Listener callback){
+
+        mSocket.on("user_data", callback);
+
+    }
+
+    public void sendUserData(double lat, double lng, String uuid) throws JSONException {
 
         JSONObject dataToSend = new JSONObject();
 
         dataToSend.put("lat", lat);
         dataToSend.put("lng", lng);
+        dataToSend.put("user", uuid);
 
         mSocket.emit("user_data", dataToSend);
-        Log.d("ME", "WE JUST EMITTED SON!");
+        // Log.d("ME", "WE JUST EMITTED SON!");
 
     }
+
+
 }

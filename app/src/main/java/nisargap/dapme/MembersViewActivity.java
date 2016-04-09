@@ -38,4 +38,21 @@ public class MembersViewActivity extends AppCompatActivity {
 
 
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        SocketUtility.getInstance().connect();
+
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        SocketUtility.getInstance().closeConnection();
+
+    }
+
+
+
 }

@@ -242,8 +242,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             try {
 
-                SocketUtility.getInstance().sendLatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
-                Log.d("ME", "RIGHT AFTER WE GET INSTANCE AND SET LAT LNG");
+                SocketUtility.getInstance().sendUserData(currentLocation.getLatitude(), currentLocation.getLongitude(), "");
+                //Log.d("ME", "RIGHT AFTER WE GET INSTANCE AND SET LAT LNG");
 
             } catch(JSONException e){
 
@@ -258,9 +258,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             currentLocation = location;
             try {
-
-                SocketUtility.getInstance().sendLatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
-                Log.d("ME", "RIGHT AFTER WE GET INSTANCE AND SET LAT LNG");
+                FirebaseUserAuth userRef = new FirebaseUserAuth();
+                SocketUtility.getInstance().sendUserData(currentLocation.getLatitude(), currentLocation.getLongitude(), userRef.getUuid());
+                //Log.d("ME", "RIGHT AFTER WE GET INSTANCE AND SET LAT LNG");
 
             } catch(JSONException e){
 
@@ -302,6 +302,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
         locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+        SocketUtility.getInstance().connect();
     }
 
     @Override
@@ -319,6 +320,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             return;
         }
         locationManager.removeUpdates(this);
+        SocketUtility.getInstance().closeConnection();
     }
 
     protected boolean isBetterLocation(Location location, Location currentBestLocation) {

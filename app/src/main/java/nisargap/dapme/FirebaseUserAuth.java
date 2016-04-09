@@ -48,4 +48,16 @@ public class FirebaseUserAuth {
 
     }
 
+    public String getUuid(){
+
+        if(checkIfLoggedIn()) {
+
+            return ref.getAuth().getUid();
+        } else {
+
+            return null;
+        }
+
+    }
+
 }

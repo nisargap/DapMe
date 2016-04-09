@@ -34,6 +34,10 @@ import android.widget.TextView;
 import com.firebase.client.AuthData;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
+import com.github.nkzawa.emitter.Emitter;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -305,7 +309,25 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
             if (success) {
 
+
                 SocketUtility.getInstance().connect();
+
+                SocketUtility.getInstance().listenOnUserData(new Emitter.Listener() {
+                    @Override
+                    public void call(Object... args) {
+
+                        try {
+                            JSONArray data = (JSONArray) args[0];
+
+                            Log.d("ME", data.toString());
+
+                        } catch (NullPointerException e) {
+
+                            Log.d("ME", e.getMessage());
+                        }
+
+                    }
+                });
 
                 Intent membersActivity = new Intent(LoginActivity.this, MembersViewActivity.class);
                 startActivity(membersActivity);
