@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+    android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin" tools:context="nisargap.dapme.Register">
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="textEmailAddress"
+        android:ems="10"
+        android:id="@+id/emailField"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:hint="@string/prompt_email" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:inputType="textEmailAddress"
+        android:ems="10"
+        android:id="@+id/passwordField"
+        android:hint="@string/prompt_password"
+        android:layout_below="@+id/emailField"
+        android:layout_alignParentStart="true"
+        android:layout_alignEnd="@+id/emailField"
+        android:password="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/action_sign_up"
+        android:id="@+id/button2"
+        android:layout_below="@+id/passwordField"
+        android:layout_alignParentStart="true"
+        android:layout_alignEnd="@+id/passwordField"
+        android:onClick="createUser" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/action_sign_in"
+        android:id="@+id/button3"
+        android:layout_below="@+id/button2"
+        android:layout_alignEnd="@+id/button2"
+        android:layout_alignParentStart="true"
+        android:onClick="goToLoginView" />
+</RelativeLayout>

@@ -1,5 +1,8 @@
 package nisargap.dapme;
 
+import android.util.Log;
+
+import com.firebase.client.AuthData;
 import com.firebase.client.Firebase;
 
 /**
@@ -27,6 +30,21 @@ public class FirebaseUserAuth {
 
         // Do the user registration
         ref.createUser(email, password, valueHandler);
+
+    }
+
+    public void logOut(){
+
+        ref.unauth();
+    }
+
+    public boolean checkIfLoggedIn(){
+
+        AuthData authData = ref.getAuth();
+
+        Log.d("nisarga", authData + "");
+
+        return authData != null;
 
     }
 

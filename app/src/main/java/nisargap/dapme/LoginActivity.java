@@ -3,6 +3,7 @@ package nisargap.dapme;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
@@ -69,11 +70,19 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+
         // Set up the Firebase context
         Firebase.setAndroidContext(this);
 
         mUserAuth = new FirebaseUserAuth();
 
+        if(mUserAuth.checkIfLoggedIn()){
+
+            Log.d("nisargap", "The current user is logged in!");
+            Intent membersView = new Intent(this, MembersViewActivity.class);
+            startActivity(membersView);
+
+        }
 
         setContentView(R.layout.activity_login);
 
@@ -204,6 +213,20 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         }
     }
 
+    public void signInView(View v){
+
+
+
+        Log.d("Nisarga", "works");
+        try {
+            Intent signUpIntent = new Intent(this, Register.class);
+            startActivity(signUpIntent);
+        }catch(Exception e){
+
+            Log.d("NisargaError", e.getMessage());
+        }
+
+    }
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
@@ -258,6 +281,9 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
                         Log.d("nisargap", firebaseError.getMessage());
 
+                        // Did not execute send onPostExecute with success = false
+                        onPostExecute(false);
+
                     }
                 });
 
@@ -279,7 +305,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
             if (success) {
 
-                Log.d("nisargap", "Yes!");
+                Intent membersActivity = new Intent(LoginActivity.this, MembersViewActivity.class);
+                startActivity(membersActivity);
 
             } else {
                 mPasswordView.setError(getString(R.string.error_incorrect_password));
