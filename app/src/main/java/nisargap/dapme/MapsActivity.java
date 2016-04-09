@@ -8,6 +8,8 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Looper;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
@@ -20,6 +22,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import com.firebase.client.Firebase;
 import com.github.nkzawa.emitter.Emitter;
 import com.github.nkzawa.socketio.client.IO;
 import com.github.nkzawa.socketio.client.Socket;
@@ -37,9 +40,12 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.logging.Handler;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener {
 
@@ -52,9 +58,37 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private static final int ZOOM_LEVEL = 15;
 
-    private HashMap<String, Marker> users;
+    private ArrayList<Marker> mMembers;
 
-    private Location currentLocation;
+    private SyncMapTask mSyncMapTask;
+
+    private class SyncMapTask extends AsyncTask<Void,Void,ArrayList<MarkerOptions> > {
+
+
+        private ArrayList<MarkerOptions> mMarkerOptions;
+        public SyncMapTask(ArrayList<MarkerOptions> markerOptions){
+
+            mMarkerOptions = markerOptions;
+
+        }
+
+
+        @Override
+        protected ArrayList<MarkerOptions> doInBackground(Void... params) {
+
+            return mMarkerOptions;
+        }
+
+        protected void onPostExecute(ArrayList<MarkerOptions> result) {
+
+            for(int i = 0; i < result.size(); ++i) {
+
+                mMap.addMarker(result.get(i));
+
+            }
+
+        }
+    }
 
 //    private Marker myMarker;
     /**
@@ -63,11 +97,67 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
      */
     private GoogleApiClient client;
 
+    private ArrayList<MarkerOptions> members;
+    private Location currentLocation;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
+        members = new ArrayList<>();
+
+        SocketUtility.getInstance().listenOnUserData(new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+
+
+                try {
+                    JSONArray data = (JSONArray) args[0];
+
+
+
+                    if(!members.isEmpty()){
+
+                        members.clear();
+                    }
+                    FirebaseUserAuth userAuth = new FirebaseUserAuth();
+                    for(int i = 0; i < data.length(); ++i){
+                        try {
+                            JSONObject dataObj = (JSONObject) data.get(i);
+
+                            LatLng loc = new LatLng((double) dataObj.get("lat"),
+                                    (double) dataObj.get("lng"));
+                            MarkerOptions newMarker = new MarkerOptions().position(loc);
+
+                            String user = dataObj.get("user").toString();
+
+                            if(user.equals(userAuth.getUuid())){
+                                newMarker.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
+                            }
+
+                            members.add(newMarker);
+
+                            // Async task call
+                            mSyncMapTask = new SyncMapTask(members);
+                            mSyncMapTask.execute((Void) null);
+
+
+                        }catch(Exception e) {
+
+                            Log.d("ME", e.getMessage());
+                        }
+
+                    }
+
+
+                } catch (NullPointerException e) {
+
+                    Log.d("ME", e.getMessage());
+                }
+
+            }
+        });
         requestPermission(Manifest.permission.ACCESS_FINE_LOCATION,
                 LOCATION_REQUEST_CODE);
 
@@ -76,12 +166,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        users = new HashMap<>();
 
         // TODO: Add websocket handlers here
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
+
     }
 
     protected void requestPermission(String permissionType, int requestCode) {
