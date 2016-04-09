@@ -36,6 +36,7 @@ import static android.Manifest.permission.READ_CONTACTS;
 
 /**
  * A login screen that offers login via email/password.
+ * This is the login screen that will connect to Firebase - Nisarga
  */
 public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<Cursor> {
 
