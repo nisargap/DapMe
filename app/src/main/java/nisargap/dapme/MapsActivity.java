@@ -3,6 +3,7 @@ package nisargap.dapme;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -143,12 +144,14 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                             LatLng loc = new LatLng((double) dataObj.get("lat"),
                                     (double) dataObj.get("lng"));
-                            MarkerOptions newMarker = new MarkerOptions().position(loc);
+
+                            MarkerOptions newMarker = new MarkerOptions().position(loc).icon(BitmapDescriptorFactory.fromResource(R.mipmap.fistbump));
+
 
                             String user = dataObj.get("user").toString();
 
                             if(user.equals(userAuth.getUuid())){
-                                newMarker.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
+                                newMarker.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
                             }
 
                             members.add(newMarker);
