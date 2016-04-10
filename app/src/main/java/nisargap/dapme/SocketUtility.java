@@ -69,6 +69,16 @@ public class SocketUtility {
         mSocket.off("user_data");
     }
 
+    public void listenForNotifications(Emitter.Listener callback){
+
+        mSocket.on("notification", callback);
+    }
+
+    public void stopListeningForNotifications(){
+
+        mSocket.off("notification");
+    }
+
     public void sendUserData(double lat, double lng, String uuid) throws JSONException {
 
         JSONObject dataToSend = new JSONObject();
@@ -81,6 +91,16 @@ public class SocketUtility {
         // Log.d("ME", "WE JUST EMITTED SON!");
 
     }
+
+    public void sendNotificaction(String uid) throws JSONException {
+
+        JSONObject obj = new JSONObject();
+        obj.put("user", uid);
+        mSocket.emit("notification", obj);
+
+    }
+
+
 
 
 }

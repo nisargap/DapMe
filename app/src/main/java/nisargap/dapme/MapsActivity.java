@@ -1,6 +1,7 @@
 package nisargap.dapme;
 
 import android.Manifest;
+import android.app.NotificationManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -11,12 +12,14 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v4.app.ActivityCompat;
 import android.os.Bundle;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Toast;
 
 import com.firebase.client.Firebase;
@@ -123,6 +126,24 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         addedMarkers = new ArrayList<>();
         newMarkers = new ArrayList<>();
 
+        SocketUtility.getInstance().listenForNotifications(new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                try {
+                    JSONObject data = (JSONObject) args[0];
+                    if(data != null) {
+
+                        notifyDap();
+
+
+                    }
+                } catch (NullPointerException e) {
+
+                }
+
+            }
+        });
+
         SocketUtility.getInstance().listenOnUserData(new Emitter.Listener() {
             @Override
             public void call(Object... args) {
@@ -132,13 +153,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     JSONArray data = (JSONArray) args[0];
 
 
-
-                    if(!members.isEmpty()){
+                    if (!members.isEmpty()) {
 
                         members.clear();
                     }
                     FirebaseUserAuth userAuth = new FirebaseUserAuth();
-                    for(int i = 0; i < data.length(); ++i){
+                    for (int i = 0; i < data.length(); ++i) {
                         try {
                             JSONObject dataObj = (JSONObject) data.get(i);
 
@@ -150,7 +170,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                             String user = dataObj.get("user").toString();
 
-                            if(user.equals(userAuth.getUuid())){
+                            if (user.equals(userAuth.getUuid())) {
                                 newMarker.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
                             }
 
@@ -161,7 +181,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                             mSyncMapTask.execute((Void) null);
 
 
-                        }catch(Exception e) {
+                        } catch (Exception e) {
 
                             Log.d("ME", e.getMessage());
                         }
@@ -238,6 +258,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
+    public void sendNotifications(View v) throws JSONException {
+
+        FirebaseUserAuth userAuth = new FirebaseUserAuth();
+
+        SocketUtility.getInstance().sendNotificaction(userAuth.getUuid());
+
+        Log.d("NISARGA", "SENT NOTIFICATION REQUEST!");
+
+    }
     /**
      * Manipulates the map once available.
      * This callback is triggered when the map is ready to be used.
@@ -395,6 +424,25 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
+    public void notifyDap() {
+
+        NotificationCompat.Builder mBuilder;
+
+        mBuilder = new NotificationCompat.Builder(MapsActivity.this)
+                .setSmallIcon(R.mipmap.fistbump)
+                .setContentTitle("Dap Alert!")
+                .setContentText("Somebody near you dapped you!");
+// Sets an ID for the notification
+        int mNotificationId = 001;
+// Gets an instance of the NotificationManager service
+        NotificationManager mNotifyMgr =
+                (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+// Builds the notification and issues it.
+        mNotifyMgr.notify(mNotificationId, mBuilder.build());
+    }
+
+
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -429,6 +477,23 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             }
         });
+        SocketUtility.getInstance().listenForNotifications(new Emitter.Listener() {
+            @Override
+            public void call(Object... args) {
+                try {
+                    JSONObject data = (JSONObject) args[0];
+                    if(data != null) {
+
+                        notifyDap();
+
+
+                    }
+                } catch (NullPointerException e) {
+
+                }
+
+            }
+        });
     }
 
     @Override
@@ -448,6 +513,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         locationManager.removeUpdates(this);
         SocketUtility.getInstance().closeConnection();
         SocketUtility.getInstance().stopListenOnUserData();
+        SocketUtility.getInstance().stopListeningForNotifications();
     }
 
     protected boolean isBetterLocation(Location location, Location currentBestLocation) {
