@@ -2,6 +2,7 @@ package nisargap.dapme;
 
 import android.Manifest;
 import android.app.NotificationManager;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -10,6 +11,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Vibrator;
 import android.support.v4.app.ActivityCompat;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
@@ -485,7 +487,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     if(data != null) {
 
                         notifyDap();
-
+                        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+                        v.vibrate(400);
 
                     }
                 } catch (NullPointerException e) {
